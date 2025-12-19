@@ -895,13 +895,20 @@
 
             <!-- CSV Upload -->
             <div id="csv-tab" class="hidden space-y-4 mb-8">
-              <div class="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center cursor-pointer hover:border-primary transition-colors" onclick="document.getElementById('csv-input').click()">
+              <div class="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center cursor-pointer hover:border-primary transition-colors" id="csv-drop-zone" ondrop="handleCSVDrop(event)" ondragover="handleCSVDragOver(event)" ondragleave="handleCSVDragLeave(event)" onclick="document.getElementById('csv-input').click()">
                 <span class="material-symbols-outlined text-4xl text-primary mb-3 block">cloud_upload</span>
                 <p class="text-white font-medium mb-1">Click to upload CSV or drag and drop</p>
                 <p class="text-gray-400 text-sm">Expected columns: Full Name, Role, ID/Roll No, Department</p>
                 <input type="file" id="csv-input" class="hidden" accept=".csv" onchange="handleCSVUpload(event)">
               </div>
-              <div id="csv-preview" class="hidden space-y-3"></div>
+              <div id="csv-preview" class="hidden bg-surface-highlight/50 rounded-xl p-4 max-h-96 overflow-y-auto">
+                <div class="flex justify-between items-center mb-3">
+                  <h4 class="text-white font-medium">Preview</h4>
+                  <span id="csv-row-count" class="text-gray-400 text-xs"></span>
+                </div>
+                <div id="csv-preview-rows" class="space-y-2"></div>
+              </div>
+              <div id="csv-error" class="hidden bg-red-900/30 border border-red-500 rounded-lg p-4 text-red-400 text-sm"></div>
             </div>
 
             <!-- Navigation Buttons -->
@@ -1064,7 +1071,7 @@
           </div>
 
           <!-- Dashboard Preview -->
-          <div class="bg-surface-dark rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+          <div class="bg-surface-dark rounded-2xl border border-white/10 shadow-2xl overflow-hidden mb-8">
             <!-- Fake browser chrome -->
             <div class="h-8 bg-surface-highlight border-b border-white/5 flex items-center px-4 gap-2">
               <div class="w-3 h-3 rounded-full bg-red-500/50"></div>
@@ -1094,36 +1101,36 @@
                 <div class="bg-surface-highlight/50 p-5 rounded-xl border border-white/5">
                   <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Total Present</p>
                   <div class="flex items-end justify-between">
-                    <h3 class="text-3xl font-bold text-white">842</h3>
-                    <span class="text-primary text-xs font-bold bg-primary/10 px-2 py-1 rounded-full">+12%</span>
+                    <h3 class="text-3xl font-bold text-white" id="stat-present">0</h3>
+                    <span class="text-primary text-xs font-bold bg-primary/10 px-2 py-1 rounded-full" id="stat-present-change">0%</span>
                   </div>
                 </div>
                 <div class="bg-surface-highlight/50 p-5 rounded-xl border border-white/5">
                   <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Late Arrivals</p>
                   <div class="flex items-end justify-between">
-                    <h3 class="text-3xl font-bold text-white">24</h3>
-                    <span class="text-orange-400 text-xs font-bold bg-orange-400/10 px-2 py-1 rounded-full">-3%</span>
+                    <h3 class="text-3xl font-bold text-white" id="stat-late">0</h3>
+                    <span class="text-orange-400 text-xs font-bold bg-orange-400/10 px-2 py-1 rounded-full" id="stat-late-change">0%</span>
                   </div>
                 </div>
                 <div class="bg-surface-highlight/50 p-5 rounded-xl border border-white/5">
                   <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">On Leave</p>
                   <div class="flex items-end justify-between">
-                    <h3 class="text-3xl font-bold text-white">18</h3>
+                    <h3 class="text-3xl font-bold text-white" id="stat-leave">0</h3>
                     <span class="text-gray-400 text-xs font-bold bg-white/5 px-2 py-1 rounded-full">Normal</span>
                   </div>
                 </div>
                 <!-- Graph Area -->
                 <div class="md:col-span-3 bg-surface-highlight/30 p-6 rounded-xl border border-white/5 h-64 flex flex-col justify-between relative overflow-hidden">
                   <div class="flex justify-between items-center mb-4">
-                    <h4 class="text-white font-medium">Weekly Attendance Trends</h4>
-                    <button class="text-xs text-primary border border-primary/30 px-3 py-1 rounded-full">Export</button>
+                    <h4 class="text-white font-medium">Attendance Distribution</h4>
+                    <button class="text-xs text-primary border border-primary/30 px-3 py-1 rounded-full" onclick="exportAttendanceData()">Export</button>
                   </div>
                   <div class="flex-1 flex items-end justify-between gap-2 px-2 relative z-10">
-                    <div class="w-full bg-primary/20 rounded-t-sm h-[60%] hover:bg-primary/40 transition-all cursor-pointer"></div>
-                    <div class="w-full bg-primary/20 rounded-t-sm h-[80%] hover:bg-primary/40 transition-all cursor-pointer"></div>
-                    <div class="w-full bg-primary rounded-t-sm h-[95%] hover:bg-primary/90 transition-all cursor-pointer shadow-[0_0_15px_rgba(54,226,123,0.3)]"></div>
-                    <div class="w-full bg-primary/20 rounded-t-sm h-[75%] hover:bg-primary/40 transition-all cursor-pointer"></div>
-                    <div class="w-full bg-primary/20 rounded-t-sm h-[70%] hover:bg-primary/40 transition-all cursor-pointer"></div>
+                    <div class="w-full bg-primary/20 rounded-t-sm hover:bg-primary/40 transition-all cursor-pointer" id="chart-bar-1"></div>
+                    <div class="w-full bg-primary/20 rounded-t-sm hover:bg-primary/40 transition-all cursor-pointer" id="chart-bar-2"></div>
+                    <div class="w-full bg-primary rounded-t-sm hover:bg-primary/90 transition-all cursor-pointer shadow-[0_0_15px_rgba(54,226,123,0.3)]" id="chart-bar-3"></div>
+                    <div class="w-full bg-primary/20 rounded-t-sm hover:bg-primary/40 transition-all cursor-pointer" id="chart-bar-4"></div>
+                    <div class="w-full bg-primary/20 rounded-t-sm hover:bg-primary/40 transition-all cursor-pointer" id="chart-bar-5"></div>
                   </div>
                   <!-- Background grid lines -->
                   <div class="absolute inset-0 top-14 px-6 flex flex-col justify-between pointer-events-none opacity-20">
@@ -1137,13 +1144,38 @@
             </div>
           </div>
 
+          <!-- Attendance Records Table - FULL WIDTH -->
+          <div class="bg-surface-dark rounded-2xl border border-white/10 p-6 mb-8">
+            <h3 class="text-white font-bold text-lg mb-4">📋 Employee Attendance Records</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-white/10">
+                    <th class="text-left py-3 px-4 text-gray-400 font-medium">Name</th>
+                    <th class="text-left py-3 px-4 text-gray-400 font-medium">Role</th>
+                    <th class="text-left py-3 px-4 text-gray-400 font-medium">ID</th>
+                    <th class="text-left py-3 px-4 text-gray-400 font-medium">Department</th>
+                    <th class="text-left py-3 px-4 text-gray-400 font-medium">Status</th>
+                    <th class="text-left py-3 px-4 text-gray-400 font-medium">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="attendance-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+              <div id="empty-state" class="text-center py-12">
+                <p class="text-gray-400">No attendance records. Upload a CSV file to add employees.</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Navigation Buttons -->
           <div class="flex gap-4 mt-8">
             <button type="button" onclick="goToPreviousStep()" class="flex-1 px-6 py-3 bg-surface-highlight border border-white/10 text-white rounded-full font-bold hover:bg-white/5 transition-all flex items-center justify-center gap-2">
               <span class="material-symbols-outlined">arrow_back</span>Back
             </button>
             <button type="button" onclick="completeSetup()" class="flex-1 px-6 py-3 bg-primary text-background-dark rounded-full font-bold hover:bg-[#2bc968] transition-all flex items-center justify-center gap-2">
-              Start Using Dashboard
+              ✅ Activate Dashboard & View Data
               <span class="material-symbols-outlined">arrow_forward</span>
             </button>
           </div>
@@ -1180,16 +1212,28 @@
 
   // Navigation Functions
   function navigateTo(page) {
-    const pages = document.querySelectorAll('[id$="-page"]');
-    pages.forEach(p => p.classList.add('hidden'));
+    // Hide all pages
+    const allPages = document.querySelectorAll('[id$="-page"]');
+    allPages.forEach(p => {
+      p.classList.add('hidden');
+    });
+    
+    // Show target page
     const targetPage = document.getElementById(page + '-page');
     if (targetPage) {
       targetPage.classList.remove('hidden');
-      targetPage.style.animation = 'none';
+      // Trigger animation
       setTimeout(() => {
         const elements = targetPage.querySelectorAll('.slide-in-right');
-        elements.forEach(el => el.classList.add('slide-in-right'));
-      }, 10);
+        elements.forEach(el => {
+          el.style.animation = 'none';
+          setTimeout(() => {
+            el.classList.add('slide-in-right');
+          }, 10);
+        });
+      }, 50);
+    } else {
+      console.error(`Page not found: ${page}-page`);
     }
   }
 
@@ -1226,17 +1270,31 @@
     // Attach event listeners
     attachChipListeners();
     
-    // Attach start tracking button
-    const startBtn = document.querySelector('button:contains("Start Tracking Attendance")');
-    if (startBtn) {
-      startBtn.addEventListener('click', () => navigateTo('setup'));
-    } else {
-      // Fallback: search for the button and attach listener
-      document.querySelectorAll('button').forEach(btn => {
-        if (btn.textContent.includes('Start Tracking Attendance')) {
-          btn.addEventListener('click', () => navigateTo('setup'));
-        }
-      });
+    // Attach start tracking button - find by text content
+    document.querySelectorAll('button').forEach(btn => {
+      if (btn.textContent.includes('Start Tracking Attendance')) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          navigateTo('setup');
+        });
+      }
+    });
+
+    // Load saved data if exists
+    const saved = localStorage.getItem('setupState');
+    if (saved) {
+      try {
+        const loaded = JSON.parse(saved);
+        setupState.formData = loaded.formData;
+        setupState.currentStep = loaded.currentStep;
+      } catch (e) {
+        console.log('Could not load saved state');
+      }
+    }
+
+    // If setup is complete, render the dashboard
+    if (localStorage.getItem('attendanceSetupComplete') === 'true') {
+      setTimeout(() => renderAttendanceTable(), 500);
     }
   });
 
@@ -1255,8 +1313,35 @@
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
+    // If going to step 4 (dashboard), render the table and sync data
+    if (step === 4) {
+      setTimeout(() => {
+        // Reload from localStorage to ensure latest data
+        const saved = localStorage.getItem('setupState');
+        if (saved) {
+          try {
+            const loaded = JSON.parse(saved);
+            setupState.formData = loaded.formData;
+            setupState.currentStep = loaded.currentStep;
+          } catch (e) {
+            console.log('Could not load saved state from localStorage');
+          }
+        }
+        
+        // Render table and update all statistics
+        renderAttendanceTable();
+        updateDashboardStats();
+        
+        // Show success notification
+        if (setupState.formData.users && setupState.formData.users.length > 0) {
+          showToast(`Dashboard ready! ${setupState.formData.users.length} employees loaded.`, 'success');
+        }
+      }, 300);
+    }
+    
     setupState.currentStep = step;
   }
+  
 
   function goToPreviousStep() {
     if (setupState.currentStep > 1) {
@@ -1352,7 +1437,9 @@
   }
 
   function validateStep2() {
-    const users = [];
+    let users = [];
+    
+    // Check for manually added users
     document.querySelectorAll('.user-card').forEach(card => {
       const name = card.querySelector('[data-field="name"]')?.value || '';
       const role = card.querySelector('[data-field="role"]')?.value || '';
@@ -1361,10 +1448,16 @@
           name: name,
           role: role,
           id: card.querySelector('[data-field="id"]')?.value || '',
-          department: card.querySelector('[data-field="department"]')?.value || ''
+          department: card.querySelector('[data-field="department"]')?.value || '',
+          status: 'Pending'
         });
       }
     });
+
+    // Use CSV imported users if available
+    if (setupState.formData.users && setupState.formData.users.length > 0) {
+      users = setupState.formData.users;
+    }
 
     if (users.length === 0) {
       showToast('Please add at least one user', 'error');
@@ -1459,39 +1552,259 @@
     }
   }
 
+  // Advanced CSV Parser with proper field handling
+  function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let insideQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+
+      if (char === '"') {
+        if (insideQuotes && nextChar === '"') {
+          current += '"';
+          i++;
+        } else {
+          insideQuotes = !insideQuotes;
+        }
+      } else if (char === ',' && !insideQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  }
+
+  // Auto-detect column mapping
+  function detectColumnMapping(headers) {
+    const mapping = {
+      name: -1,
+      role: -1,
+      id: -1,
+      department: -1
+    };
+
+    const lowerHeaders = headers.map(h => h.toLowerCase().trim());
+
+    // Find column indices with intelligent matching
+    lowerHeaders.forEach((header, idx) => {
+      const h = header.replace(/[_\s]/g, '');
+      
+      if (mapping.name === -1 && ['name', 'employeename', 'fullname', 'firstname'].includes(h)) {
+        mapping.name = idx;
+      } else if (mapping.role === -1 && ['role', 'position', 'designation', 'jobposition'].includes(h)) {
+        mapping.role = idx;
+      } else if (mapping.id === -1 && ['id', 'employeeid', 'empid', 'number', 'eno'].includes(h)) {
+        mapping.id = idx;
+      } else if (mapping.department === -1 && ['department', 'dept', 'division', 'team', 'section'].includes(h)) {
+        mapping.department = idx;
+      }
+    });
+
+    // Fallback mapping if columns not detected by name
+    if (mapping.name === -1) mapping.name = 0;
+    if (mapping.role === -1 && mapping.name !== 1) mapping.role = 1;
+    if (mapping.id === -1 && ![mapping.name, mapping.role].includes(2)) mapping.id = 2;
+    if (mapping.department === -1 && ![mapping.name, mapping.role, mapping.id].includes(3)) mapping.department = 3;
+
+    return mapping;
+  }
+
   function handleCSVUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = function(e) {
-      const csv = e.target.result;
-      const lines = csv.split('\n');
-      const preview = document.getElementById('csv-preview');
-      preview.innerHTML = '';
-      
-      let count = 0;
-      for (let i = 1; i < lines.length && count < 5; i++) {
-        const parts = lines[i].split(',');
-        if (parts[0].trim()) {
-          const row = document.createElement('div');
-          row.className = 'flex gap-3 p-3 bg-surface-highlight/50 rounded-lg text-sm text-white';
-          row.innerHTML = `
-            <span class="flex-1">${parts[0]?.trim() || '-'}</span>
-            <span class="flex-1 text-gray-400">${parts[1]?.trim() || '-'}</span>
-            <span class="flex-1 text-gray-400">${parts[2]?.trim() || '-'}</span>
-          `;
-          preview.appendChild(row);
-          count++;
+      try {
+        const csv = e.target.result;
+        const lines = csv.trim().split('\n').filter(line => line.trim());
+        
+        if (lines.length < 2) {
+          showCSVError('CSV file must contain at least a header and one data row');
+          return;
         }
-      }
-      
-      if (count > 0) {
-        preview.classList.remove('hidden');
-        preview.insertAdjacentHTML('beforebegin', `<p class="text-white text-sm font-medium mb-3">Preview (showing ${count} rows)</p>`);
+
+        // Parse header
+        const headers = parseCSVLine(lines[0]);
+        if (headers.length === 0) {
+          showCSVError('CSV file has no headers');
+          return;
+        }
+
+        // Detect column mapping
+        const mapping = detectColumnMapping(headers);
+
+        // Parse data rows with validation
+        const users = [];
+        const errorRows = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          
+          try {
+            const parts = parseCSVLine(line);
+            
+            // Extract values based on mapping
+            const name = parts[mapping.name] || '';
+            const role = parts[mapping.role] || 'Employee';
+            const id = parts[mapping.id] || '';
+            const department = parts[mapping.department] || '';
+
+            // Validate required fields
+            if (!name || name.length === 0) {
+              errorRows.push({ row: i + 1, reason: 'Missing name' });
+              continue;
+            }
+
+            // Create user object with validation
+            const user = {
+              name: name.replace(/"/g, '').trim(),
+              role: role.replace(/"/g, '').trim() || 'Employee',
+              id: id.replace(/"/g, '').trim(),
+              department: department.replace(/"/g, '').trim(),
+              status: 'Pending',
+              checkInTime: null,
+              checkOutTime: null,
+              date: new Date().toISOString().split('T')[0]
+            };
+
+            // Additional validation
+            if (user.name.length < 2) {
+              errorRows.push({ row: i + 1, reason: 'Name too short' });
+              continue;
+            }
+
+            if (user.name.length > 100) {
+              user.name = user.name.substring(0, 100);
+            }
+
+            users.push(user);
+
+          } catch (rowErr) {
+            errorRows.push({ row: i + 1, reason: 'Parse error: ' + rowErr.message });
+          }
+        }
+
+        if (users.length === 0) {
+          const errorMsg = errorRows.length > 0 
+            ? `No valid user records found. ${errorRows.length} rows had errors: ${errorRows.map(e => `Row ${e.row}: ${e.reason}`).join(', ')}`
+            : 'No valid user records found in CSV';
+          showCSVError(errorMsg);
+          return;
+        }
+
+        // Store users and display preview
+        setupState.formData.users = users;
+        
+        // SAVE TO LOCALSTORAGE IMMEDIATELY
+        localStorage.setItem('setupState', JSON.stringify(setupState));
+        
+        displayCSVPreview(users, errorRows);
+        hideCSVError();
+        
+        // Show success message
+        showToast(`✓ ${users.length} employees imported successfully!`, 'success');
+        
+      } catch (err) {
+        showCSVError('Error parsing CSV: ' + err.message);
       }
     };
     reader.readAsText(file);
+  }
+
+  function displayCSVPreview(users, errorRows) {
+    const preview = document.getElementById('csv-preview');
+    const previewRows = document.getElementById('csv-preview-rows');
+    const rowCount = document.getElementById('csv-row-count');
+    
+    previewRows.innerHTML = '';
+    
+    // Create header row
+    const headerRow = document.createElement('div');
+    headerRow.className = 'flex gap-2 p-3 bg-primary/20 rounded-lg text-xs font-bold text-primary border border-primary/30 sticky top-0';
+    headerRow.innerHTML = `
+      <span class="flex-1 min-w-[120px]">Name</span>
+      <span class="flex-1 min-w-[100px]">Role</span>
+      <span class="flex-1 min-w-[80px]">ID</span>
+      <span class="flex-1 min-w-[120px]">Department</span>
+      <span class="text-center min-w-[30px]">Status</span>
+    `;
+    previewRows.appendChild(headerRow);
+    
+    // Show data rows
+    users.slice(0, 10).forEach((user, idx) => {
+      const row = document.createElement('div');
+      row.className = 'flex gap-2 p-3 bg-surface-dark/50 rounded-lg text-xs text-white border border-white/5 hover:border-primary/30 transition-colors';
+      row.innerHTML = `
+        <span class="flex-1 min-w-[120px] font-medium text-gray-200">${escapeHtml(user.name)}</span>
+        <span class="flex-1 min-w-[100px] text-gray-400">${escapeHtml(user.role)}</span>
+        <span class="flex-1 min-w-[80px] text-gray-400">${escapeHtml(user.id || '-')}</span>
+        <span class="flex-1 min-w-[120px] text-gray-400">${escapeHtml(user.department || '-')}</span>
+        <span class="text-center min-w-[30px] text-primary font-bold">✓</span>
+      `;
+      previewRows.appendChild(row);
+    });
+    
+    // Show summary message
+    let summaryMsg = `<span class="text-primary font-semibold">${users.length} employees</span> ready to import`;
+    if (errorRows && errorRows.length > 0) {
+      const errorDetails = errorRows.slice(0, 3).map(e => `Row ${e.row}: ${e.reason}`).join(' | ');
+      summaryMsg += ` | <span class="text-yellow-400 text-xs ml-2">⚠️ ${errorRows.length} rows skipped: ${errorDetails}${errorRows.length > 3 ? '...' : ''}</span>`;
+    }
+    if (users.length > 10) {
+      summaryMsg += ` | <span class="text-gray-400 text-xs ml-2">Showing first 10 of ${users.length}</span>`;
+    }
+    
+    rowCount.innerHTML = summaryMsg;
+    preview.classList.remove('hidden');
+  }
+
+  // Helper function to escape HTML special characters
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function showCSVError(message) {
+    const errorEl = document.getElementById('csv-error');
+    errorEl.textContent = message;
+    errorEl.classList.remove('hidden');
+  }
+
+  function hideCSVError() {
+    const errorEl = document.getElementById('csv-error');
+    errorEl.classList.add('hidden');
+  }
+
+  function handleCSVDragOver(e) {
+    e.preventDefault();
+    document.getElementById('csv-drop-zone').classList.add('border-primary', 'bg-primary/5');
+  }
+
+  function handleCSVDragLeave(e) {
+    e.preventDefault();
+    document.getElementById('csv-drop-zone').classList.remove('border-primary', 'bg-primary/5');
+  }
+
+  function handleCSVDrop(e) {
+    e.preventDefault();
+    document.getElementById('csv-drop-zone').classList.remove('border-primary', 'bg-primary/5');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === 'text/csv' || file.name.endsWith('.csv')) {
+      const input = document.getElementById('csv-input');
+      input.files = e.dataTransfer.files;
+      handleCSVUpload({ target: input });
+    } else {
+      showCSVError('Please upload a valid CSV file');
+    }
   }
 
   // Step 3: Method Selection
@@ -1539,13 +1852,316 @@
     }, 3000);
   }
 
-  // Complete Setup
+  // Dashboard Functions
+  function renderAttendanceTable() {
+    console.log('renderAttendanceTable() called');
+    
+    const tableBody = document.getElementById('attendance-table-body');
+    const emptyState = document.getElementById('empty-state');
+    const users = setupState.formData.users;
+
+    console.log('Users available:', users ? users.length : 0);
+
+    if (!tableBody) {
+      console.error('ERROR: attendance-table-body not found in DOM');
+      return;
+    }
+
+    if (!users || users.length === 0) {
+      console.log('No users to display, showing empty state');
+      tableBody.innerHTML = '';
+      if (emptyState) {
+        emptyState.classList.remove('hidden');
+      }
+      updateDashboardStats();
+      return;
+    }
+
+    console.log('Rendering', users.length, 'users');
+    if (emptyState) {
+      emptyState.classList.add('hidden');
+    }
+    tableBody.innerHTML = '';
+
+    // Validate and clean user data before rendering
+    users.forEach((user, idx) => {
+      // Ensure all required fields exist and are properly formatted
+      if (!user.name) user.name = 'Unknown';
+      if (!user.role) user.role = 'Employee';
+      if (!user.id) user.id = '';
+      if (!user.department) user.department = '';
+      if (!user.status) user.status = 'Pending';
+      
+      const row = document.createElement('tr');
+      row.className = 'border-b border-white/5 hover:bg-white/5 transition-colors';
+      
+      const statusBadge = getStatusBadge(user.status);
+      
+      // Escape HTML to prevent injection
+      const name = escapeHtml(user.name);
+      const role = escapeHtml(user.role);
+      const id = escapeHtml(user.id || '-');
+      const department = escapeHtml(user.department || '-');
+      
+      row.innerHTML = `
+        <td class="py-4 px-4 text-white font-medium">${name}</td>
+        <td class="py-4 px-4 text-gray-400">${role}</td>
+        <td class="py-4 px-4 text-gray-400">${id}</td>
+        <td class="py-4 px-4 text-gray-400">${department}</td>
+        <td class="py-4 px-4">
+          <select onchange="updateUserStatus(${idx}, this.value)" class="px-3 py-1 bg-surface-highlight border border-white/10 rounded-lg text-white text-xs focus:border-primary focus:outline-none cursor-pointer">
+            <option value="Pending" ${user.status === 'Pending' ? 'selected' : ''}>Pending</option>
+            <option value="Present" ${user.status === 'Present' ? 'selected' : ''}>Present</option>
+            <option value="Absent" ${user.status === 'Absent' ? 'selected' : ''}>Absent</option>
+            <option value="Late" ${user.status === 'Late' ? 'selected' : ''}>Late</option>
+            <option value="Leave" ${user.status === 'Leave' ? 'selected' : ''}>Leave</option>
+          </select>
+        </td>
+        <td class="py-4 px-4">
+          <button onclick="markAttendance(${idx}, 'Present')" class="text-primary hover:text-green-400 transition-colors text-xs font-medium" title="Mark as Present">
+            <span class="material-symbols-outlined text-sm">done</span>
+          </button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+
+    console.log('Table rendered with', users.length, 'rows');
+    updateDashboardStats();
+  }
+
+  function getStatusBadge(status) {
+    const badges = {
+      'Present': '<span class="text-green-400 text-xs font-bold bg-green-400/10 px-2 py-1 rounded-full">✓ Present</span>',
+      'Absent': '<span class="text-red-400 text-xs font-bold bg-red-400/10 px-2 py-1 rounded-full">✗ Absent</span>',
+      'Late': '<span class="text-orange-400 text-xs font-bold bg-orange-400/10 px-2 py-1 rounded-full">⚠ Late</span>',
+      'Leave': '<span class="text-blue-400 text-xs font-bold bg-blue-400/10 px-2 py-1 rounded-full">🏖 Leave</span>',
+      'Pending': '<span class="text-gray-400 text-xs font-bold bg-gray-400/10 px-2 py-1 rounded-full">⏳ Pending</span>'
+    };
+    return badges[status] || badges['Pending'];
+  }
+
+  function updateUserStatus(idx, status) {
+    setupState.formData.users[idx].status = status;
+    renderAttendanceTable();
+    showToast(`${setupState.formData.users[idx].name}'s status updated to ${status}`, 'success');
+  }
+
+  function markAttendance(idx, status) {
+    setupState.formData.users[idx].status = status;
+    renderAttendanceTable();
+    showToast(`${setupState.formData.users[idx].name} marked as ${status}`, 'success');
+  }
+
+  // Sync data from localStorage and refresh dashboard
+  function syncDashboardData() {
+    try {
+      // Load saved state from localStorage
+      const saved = localStorage.getItem('setupState');
+      if (saved) {
+        const loaded = JSON.parse(saved);
+        if (loaded.formData && loaded.formData.users) {
+          setupState.formData = loaded.formData;
+          console.log('Data synced from localStorage:', loaded.formData.users.length, 'employees');
+        }
+      }
+      
+      // Re-render everything
+      renderAttendanceTable();
+      updateDashboardStats();
+      
+      return setupState.formData.users ? setupState.formData.users.length : 0;
+    } catch (e) {
+      console.error('Error syncing dashboard data:', e);
+      return 0;
+    }
+  }
+
+  function updateDashboardStats() {
+    console.log('updateDashboardStats() called');
+    
+    const users = setupState.formData.users;
+    
+    if (!users || users.length === 0) {
+      console.log('No users, resetting stats to 0');
+      
+      // Reset all stats to 0
+      const statPresent = document.getElementById('stat-present');
+      const statLate = document.getElementById('stat-late');
+      const statLeave = document.getElementById('stat-leave');
+      const statPresentChange = document.getElementById('stat-present-change');
+      const statLateChange = document.getElementById('stat-late-change');
+      
+      if (statPresent) statPresent.textContent = '0';
+      if (statLate) statLate.textContent = '0';
+      if (statLeave) statLeave.textContent = '0';
+      if (statPresentChange) statPresentChange.textContent = '0%';
+      if (statLateChange) statLateChange.textContent = '0%';
+      
+      // Reset chart bars
+      for (let i = 0; i < 5; i++) {
+        const bar = document.getElementById(`chart-bar-${i + 1}`);
+        if (bar) bar.style.height = '0%';
+      }
+      
+      saveCurrentStep();
+      return;
+    }
+    
+    const present = users.filter(u => u.status === 'Present').length;
+    const late = users.filter(u => u.status === 'Late').length;
+    const leave = users.filter(u => u.status === 'Leave').length;
+    const absent = users.filter(u => u.status === 'Absent').length;
+    const pending = users.filter(u => u.status === 'Pending').length;
+    const total = users.length;
+
+    console.log('Stats calculated:', { present, late, leave, absent, pending, total });
+
+    // Update stat cards - with safety checks
+    const statPresent = document.getElementById('stat-present');
+    const statLate = document.getElementById('stat-late');
+    const statLeave = document.getElementById('stat-leave');
+    const statPresentChange = document.getElementById('stat-present-change');
+    const statLateChange = document.getElementById('stat-late-change');
+    
+    if (statPresent) statPresent.textContent = present;
+    if (statLate) statLate.textContent = late;
+    if (statLeave) statLeave.textContent = leave;
+
+    const presentPercentage = total > 0 ? Math.round((present / total) * 100) : 0;
+    const latePercentage = total > 0 ? Math.round((late / total) * 100) : 0;
+    
+    if (statPresentChange) statPresentChange.textContent = presentPercentage + '%';
+    if (statLateChange) statLateChange.textContent = (latePercentage > 0 ? '+' : '') + latePercentage + '%';
+
+    // Update chart bars - normalized to show distribution
+    const chartData = [present, late, leave, absent, pending];
+    const maxValue = Math.max(...chartData, 1);
+    
+    for (let i = 0; i < 5; i++) {
+      const bar = document.getElementById(`chart-bar-${i + 1}`);
+      if (bar) {
+        const height = (chartData[i] / maxValue) * 100;
+        bar.style.height = height + '%';
+      }
+    }
+
+    console.log('Stats updated successfully');
+    saveCurrentStep();
+  }
+
+  function exportAttendanceData() {
+    const users = setupState.formData.users;
+    if (!users || users.length === 0) {
+      showToast('No attendance data to export', 'error');
+      return;
+    }
+
+    const headers = ['Full Name', 'Role', 'ID', 'Department', 'Status', 'Date'];
+    const rows = users.map(u => [
+      u.name,
+      u.role,
+      u.id || '',
+      u.department || '',
+      u.status,
+      new Date().toLocaleDateString()
+    ]);
+
+    const csv = [headers, ...rows].map(row => 
+      row.map(cell => `"${cell}"`).join(',')
+    ).join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `attendance-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    showToast('Attendance data exported successfully!', 'success');
+  }
+
+  // Complete Setup and Render Dashboard
   function completeSetup() {
-    showToast('Attendance system successfully activated!', 'success');
+    console.log('completeSetup() called');
+    
+    // Validate that we have users to track
+    if (!setupState.formData.users || setupState.formData.users.length === 0) {
+      console.log('No users found in setupState');
+      showToast('Please add employees before completing setup', 'error');
+      return;
+    }
+
+    console.log('Users found:', setupState.formData.users.length);
+
+    // Reload data from localStorage to ensure latest data
+    try {
+      const saved = localStorage.getItem('setupState');
+      if (saved) {
+        const loaded = JSON.parse(saved);
+        if (loaded.formData && loaded.formData.users && loaded.formData.users.length > 0) {
+          console.log('Loaded from localStorage:', loaded.formData.users.length, 'users');
+          setupState.formData.users = loaded.formData.users;
+        }
+      }
+    } catch (e) {
+      console.error('Error loading from localStorage:', e);
+    }
+
+    // Check that table element exists
+    const tableBody = document.getElementById('attendance-table-body');
+    const statsPresent = document.getElementById('stat-present');
+    
+    if (!tableBody) {
+      console.error('attendance-table-body element not found!');
+      showToast('Error: Dashboard table element not found', 'error');
+      return;
+    }
+    
+    if (!statsPresent) {
+      console.error('stat-present element not found!');
+      showToast('Error: Statistics elements not found', 'error');
+      return;
+    }
+
+    console.log('Rendering table and stats...');
+    
+    // Render employee table with full data
+    renderAttendanceTable();
+    
+    // Update all statistics and charts
+    updateDashboardStats();
+    
+    // Save completion state to localStorage
+    localStorage.setItem('attendanceSetupComplete', 'true');
+    localStorage.setItem('setupState', JSON.stringify(setupState));
+    
+    console.log('Data saved to localStorage');
+    
+    // Scroll to table so user sees the rendered data
     setTimeout(() => {
-      navigateTo('home');
-      resetSetupState();
-    }, 1500);
+      const tableSection = document.querySelector('h3:contains("Employee Attendance Records")') || 
+                          document.querySelector('.bg-surface-dark:has(#attendance-table-body)');
+      if (tableSection) {
+        tableSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else if (tableBody) {
+        tableBody.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      
+      console.log('Scrolled to table');
+    }, 300);
+    
+    // Show success notification with employee count
+    const empCount = setupState.formData.users.length;
+    showToast(`✅ System Activated! ${empCount} employee${empCount !== 1 ? 's' : ''} loaded & ready to track.`, 'success');
+    
+    console.log('✅ Setup completed successfully', {
+      employeeCount: empCount,
+      organization: setupState.formData.organization,
+      dataVisible: tableBody.innerHTML.length > 0,
+      timestamp: new Date().toISOString()
+    });
   }
 </script>
 </body>
